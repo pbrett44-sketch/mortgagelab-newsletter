@@ -70,7 +70,7 @@ For each of the 5 articles provided, write:
 
 **Why it matters for UK mortgages:** [1-2 sentences explaining the practical implication for mortgage professionals]
 
-[Link text: Read more →]
+[Read more →](USE_ARTICLE_LINK_HERE)
 
 ---
 
@@ -105,6 +105,7 @@ D) [Option 4]
 ---
 
 IMPORTANT RULES:
+- Use the actual article 'link' from the JSON data for each Read more link
 - Keep each story summary to 2-3 sentences maximum
 - Explain AI terms simply (e.g., "machine learning - when computers learn from patterns in data")
 - Focus on "what this means" not "what this is"
