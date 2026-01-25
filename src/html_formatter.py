@@ -58,8 +58,8 @@ class HTMLFormatter:
             # Convert bold text
             section = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', section)
             
-            # Convert links
-            section = re.sub(r'\[(.+?)\]', r'<a href="#" class="read-more">\1</a>', section)
+            # Convert links - now handles markdown format [text](url)
+            section = re.sub(r'\[(.+?)\]\((.+?)\)', r'<a href="\2" class="read-more">\1</a>', section)
             
             # Convert paragraphs
             paragraphs = section.split('\n\n')
