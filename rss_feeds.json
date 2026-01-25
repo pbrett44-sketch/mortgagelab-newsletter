@@ -1,0 +1,93 @@
+{
+  "mortgage_press": [
+    {
+      "name": "Mortgage Strategy",
+      "url": "https://mortgagestrategy.co.uk/feed",
+      "category": "UK Mortgage Press"
+    },
+    {
+      "name": "Mortgage Finance Gazette",
+      "url": "https://mortgagefinancegazette.com/feed",
+      "category": "UK Mortgage Press"
+    },
+    {
+      "name": "What Mortgage",
+      "url": "https://whatmortgage.co.uk/feed",
+      "category": "UK Mortgage Press"
+    },
+    {
+      "name": "Mortgage Introducer",
+      "url": "https://mpamag.com/uk/rss",
+      "category": "UK Mortgage Press"
+    },
+    {
+      "name": "Financial Reporter",
+      "url": "https://www.financialreporter.co.uk/rss",
+      "category": "UK Financial Press"
+    },
+    {
+      "name": "Mortgage Soup",
+      "url": "https://mortgagesoup.co.uk/feed",
+      "category": "UK Mortgage Press"
+    },
+    {
+      "name": "Bridging & Commercial",
+      "url": "https://www.bridgingandcommercial.co.uk/rss-feed",
+      "category": "Specialist Finance"
+    },
+    {
+      "name": "Mortgage Solutions",
+      "url": "https://mortgagesolutions.co.uk/feed",
+      "category": "UK Mortgage Press"
+    }
+  ],
+  "tech_ai_news": [
+    {
+      "name": "TechCrunch AI",
+      "url": "https://techcrunch.com/category/artificial-intelligence/feed/",
+      "category": "AI News"
+    },
+    {
+      "name": "The Verge AI",
+      "url": "https://www.theverge.com/ai-artificial-intelligence/rss/index.xml",
+      "category": "AI News"
+    },
+    {
+      "name": "MIT Technology Review AI",
+      "url": "https://www.technologyreview.com/topic/artificial-intelligence/feed",
+      "category": "AI News"
+    },
+    {
+      "name": "VentureBeat AI",
+      "url": "https://venturebeat.com/category/ai/feed/",
+      "category": "AI News"
+    },
+    {
+      "name": "AI Magazine",
+      "url": "https://aimagazine.com/feed",
+      "category": "AI News"
+    },
+    {
+      "name": "AI Magazine RSS",
+      "url": "https://aimagazine.com/rss",
+      "category": "AI News"
+    }
+  ],
+  "broadsheet_tech": [
+    {
+      "name": "Financial Times Technology",
+      "url": "https://www.ft.com/technology?format=rss",
+      "category": "Broadsheet Tech"
+    },
+    {
+      "name": "The Times Technology",
+      "url": "https://www.thetimes.co.uk/technology/rss",
+      "category": "Broadsheet Tech"
+    },
+    {
+      "name": "The Guardian Technology",
+      "url": "https://www.theguardian.com/uk/technology/rss",
+      "category": "Broadsheet Tech"
+    }
+  ]
+}

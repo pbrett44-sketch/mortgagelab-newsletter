@@ -1,0 +1,77 @@
+## SECTION 1: Top 5 AI Stories
+
+**ClearScore Snaps Up Acre in Major Mortgage Tech Play**
+
+The fintech giant behind your customers' credit scores has acquired London-based Acre Platforms, a technology provider that serves mortgage and protection brokers. This follows ClearScore's earlier purchase of lender Aro Finance, signalling a serious push into the mortgage market.
+
+**Why it matters for UK mortgages:** ClearScore now controls both customer data and broker technology platforms, potentially creating a powerful competitor that could reshape how mortgages are distributed and processed.
+
+Read more →
+
+---
+
+**Armalytix Expands Beyond Conveyancing Checks**
+
+The data firm that handles anti-money laundering and affordability checks for lenders is broadening its focus to support estate agents and brokers earlier in the property transaction process. They've appointed a new head of sales to drive this expansion through 2026.
+
+**Why it matters for UK mortgages:** Earlier integration of AML and affordability data could speed up mortgage applications and reduce the back-and-forth that currently slows down completions.
+
+Read more →
+
+---
+
+**MAB Buys Data Firm for £2.8m as House Prices Jump**
+
+Mortgage Advice Bureau acquired data company Dashly whilst the property market saw its biggest January house price bounce in 25 years. The combination of tech investment and rising prices highlights the industry's current momentum.
+
+**Why it matters for UK mortgages:** Large brokerages are investing heavily in data capabilities whilst strong house price growth suggests sustained mortgage demand ahead.
+
+Read more →
+
+---
+
+**Study Shows AI Struggles with Real Office Work**
+
+New research tested leading AI systems on actual white-collar tasks from consulting, investment banking, and law. Most AI models failed when faced with complex, real-world professional work rather than simple, controlled tasks.
+
+**Why it matters for UK mortgages:** Before investing in AI tools for underwriting or application processing, understand that current AI still struggles with the nuanced, complex decisions that mortgage professionals handle daily.
+
+Read more →
+
+---
+
+**AI Agents Move into Core Business Operations**
+
+AI agents - software that can work independently rather than just respond to questions - are being deployed for lead generation, customer support, and financial processes. However, experts warn that giving AI too much autonomy without proper oversight could create operational chaos.
+
+**Why it matters for UK mortgages:** AI agents could automate mortgage application processing and customer enquiries, but firms need robust data foundations and clear boundaries before deployment.
+
+Read more →
+
+---
+
+## SECTION 2: This Week's Quiz
+
+**This Week's Quiz:**
+According to new research, how did leading AI systems perform when tested on real white-collar work tasks?
+
+A) They exceeded human performance in most areas
+B) They performed well on simple tasks but struggled with complexity
+C) Most AI models failed the real-world tests
+D) They matched human performance but worked much faster
+
+*(Answer at bottom of newsletter)*
+
+---
+
+## SECTION 3: Weekend Trivia
+
+**Something for the Weekend**
+
+The term "artificial intelligence" was first coined in 1956 at a summer conference at Dartmouth College, where researchers optimistically predicted they could solve AI in just two months. Nearly 70 years later, we're still working on it - though your smartphone now has more AI capability than those early pioneers could have imagined.
+
+---
+
+## QUIZ ANSWER
+
+**Answer:** C - Most AI models failed when tested on actual professional tasks from consulting, investment banking, and law, showing that current AI still has significant limitations when handling complex, real-world work.
