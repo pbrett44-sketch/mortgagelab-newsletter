@@ -34,10 +34,22 @@ jobs:
         DATE=$(date +'%Y-%m-%d')
         FILENAME="newsletter_${DATE}.html"
         
-        curl -X POST https://upload.box.com/api/2.0/files/content \
+        echo "Uploading ${FILENAME} to Box folder 362567737269..."
+        
+        RESPONSE=$(curl -X POST https://upload.box.com/api/2.0/files/content \
           -H "Authorization: Bearer ${{ secrets.BOX_ACCESS_TOKEN }}" \
           -F "attributes={\"name\":\"${FILENAME}\", \"parent\":{\"id\":\"362567737269\"}}" \
-          -F "file=@output/newsletter_${DATE}.html"
+          -F "file=@output/newsletter_${DATE}.html" \
+          -w "\n%{http_code}")
+        
+        echo "Response: $RESPONSE"
+        
+        if echo "$RESPONSE" | grep -q "201\|200"; then
+          echo "✓ Successfully uploaded to Box!"
+        else
+          echo "✗ Upload failed"
+          exit 1
+        fi
     
     - name: Get current date
       id: date
