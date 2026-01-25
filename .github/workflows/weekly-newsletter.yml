@@ -29,6 +29,16 @@ jobs:
       run: |
         python generate_newsletter.py
     
+    - name: Upload to Box
+      run: |
+        DATE=$(date +'%Y-%m-%d')
+        FILENAME="newsletter_${DATE}.html"
+        
+        curl -X POST https://upload.box.com/api/2.0/files/content \
+          -H "Authorization: Bearer ${{ secrets.BOX_ACCESS_TOKEN }}" \
+          -F "attributes={\"name\":\"${FILENAME}\", \"parent\":{\"id\":\"362567737269\"}}" \
+          -F "file=@output/newsletter_${DATE}.html"
+    
     - name: Get current date
       id: date
       run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
