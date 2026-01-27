@@ -212,14 +212,6 @@ if __name__ == '__main__':
 
     formatter.save_html(html, '../output/newsletter.html')
     print("HTML newsletter created successfully!")
-```
 
-To replace the file, you can either:
 
-1. Open it in a text editor: `open -e src/html_formatter.py` — select all, delete, paste the code above, save
 
-2. Or use nano in terminal: `nano src/html_formatter.py` — then Ctrl+A to select all, delete, paste, Ctrl+O to save, Ctrl+X to exit
-
-Once saved, run:
-```
-python3 generate_newsletter.py
