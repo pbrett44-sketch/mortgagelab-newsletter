@@ -16,8 +16,7 @@ class HTMLFormatter:
     BRAND_LILAC = "#cc99ff"      # Secondary accents, dividers
 
     # Logo URL - UPDATE THIS to your publicly hosted logo URL
-    LOGO_URL = "https://mortgagelab.ai/assets/images/mortgagelab-logo.png"
-
+    LOGO_URL = "https://raw.githubusercontent.com/pbrett44-sketch/mortgagelab-newsletter/main/mortgagelab-logo.png"
     def __init__(self, template_path: str = None):
                 """Initialize with optional custom template"""
                 self.template_path = template_path
