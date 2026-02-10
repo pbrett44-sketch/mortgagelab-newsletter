@@ -1,6 +1,6 @@
 """
 HTML Formatter - Converts newsletter content to HTML for Mailchimp
-With mortgagelab.ai branding
+With mortgagelab.ai branding - Dark Tech Theme
 """
 
 from datetime import datetime
@@ -9,11 +9,13 @@ import re
 
 
 class HTMLFormatter:
-    # Brand colours
-    BRAND_BLACK = "#000000"      # Body text
-    BRAND_WHITE = "#ffffff"      # Background
-    BRAND_PURPLE = "#6000ff"     # Headings, links, accents
-    BRAND_LILAC = "#cc99ff"      # Secondary accents, dividers
+    # Brand colours - Dark Tech Theme
+    BRAND_DARK_BG = "#0a0a1a"       # Outer background - deep dark navy
+    BRAND_CONTENT_BG = "#141428"    # Content area - slightly lighter
+    BRAND_TEXT = "#e8e8e8"          # Main body text - off-white
+    BRAND_PURPLE = "#6000ff"        # Headings, links, accents (KEPT)
+    BRAND_LILAC = "#cc99ff"         # Secondary accents, dividers (KEPT)
+    BRAND_MUTED = "#999999"         # Footer/secondary text
 
     # Logo URL
     LOGO_URL = "https://raw.githubusercontent.com/pbrett44-sketch/mortgagelab-newsletter/main/mortgagelab-logo.png"
@@ -49,7 +51,7 @@ class HTMLFormatter:
         return html
 
     def _convert_to_html(self, content: str) -> str:
-        """Convert markdown-style content to HTML with brand colours"""
+        """Convert markdown-style content to HTML with dark theme brand colours"""
 
         # Split into sections
         sections = content.split('---')
@@ -70,7 +72,7 @@ class HTMLFormatter:
             )
             section = re.sub(
                 r'^\*\*(.+?)\*\*$',
-                rf'<h3 style="color: {self.BRAND_BLACK}; font-size: 18px; font-weight: 600; margin: 20px 0 10px 0;">\1</h3>',
+                rf'<h3 style="color: {self.BRAND_TEXT}; font-size: 18px; font-weight: 600; margin: 20px 0 10px 0;">\1</h3>',
                 section,
                 flags=re.MULTILINE
             )
@@ -78,7 +80,7 @@ class HTMLFormatter:
             # Convert bold text
             section = re.sub(
                 r'\*\*(.+?)\*\*',
-                rf'<strong style="color: {self.BRAND_BLACK}; font-weight: 600;">\1</strong>',
+                rf'<strong style="color: {self.BRAND_TEXT}; font-weight: 600;">\1</strong>',
                 section
             )
 
@@ -104,11 +106,11 @@ class HTMLFormatter:
                 # Check if it's a list item (A), B), etc.)
                 elif re.match(r'^[A-D]\)', para):
                     formatted_paragraphs.append(
-                        f'<p style="margin: 8px 0; padding-left: 15px; color: {self.BRAND_BLACK};">{para}</p>'
+                        f'<p style="margin: 8px 0; padding-left: 15px; color: {self.BRAND_TEXT};">{para}</p>'
                     )
                 else:
                     formatted_paragraphs.append(
-                        f'<p style="margin: 10px 0; color: {self.BRAND_BLACK};">{para}</p>'
+                        f'<p style="margin: 10px 0; color: {self.BRAND_TEXT};">{para}</p>'
                     )
 
             html_parts.append('\n'.join(formatted_paragraphs))
@@ -127,7 +129,7 @@ class HTMLFormatter:
         return divider.join(html_parts)
 
     def _build_html_template(self, content: str, date: str, issue_number: str) -> str:
-        """Build complete HTML email template with mortgagelab.ai branding"""
+        """Build complete HTML email template with dark tech theme"""
 
         html = f"""<!DOCTYPE html>
 <html lang="en-GB">
@@ -145,32 +147,35 @@ class HTMLFormatter:
     </noscript>
     <![endif]-->
 </head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: {self.BRAND_BLACK}; background-color: {self.BRAND_WHITE};">
-    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: {self.BRAND_WHITE};">
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: {self.BRAND_TEXT}; background-color: {self.BRAND_DARK_BG};">
+    <!-- Outer wrapper with dark background -->
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: {self.BRAND_DARK_BG};">
         <tr>
             <td align="center" style="padding: 20px 10px;">
-                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width: 600px; background-color: {self.BRAND_WHITE};">
-                    
+
+                <!-- Inner content area -->
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width: 600px; background-color: {self.BRAND_CONTENT_BG}; border-radius: 8px; overflow: hidden;">
+
                     <!-- Header with Logo -->
                     <tr>
-                        <td align="center" style="padding: 30px 40px 20px 40px; border-bottom: 3px solid {self.BRAND_PURPLE};">
+                        <td align="center" style="padding: 30px 40px 20px 40px; border-bottom: 3px solid {self.BRAND_PURPLE}; background-color: {self.BRAND_CONTENT_BG};">
                             <img src="{self.LOGO_URL}" alt="mortgagelab.ai" width="180" height="180" style="display: block; width: 180px; height: auto; max-width: 180px; border: 0;">
-                            <p style="margin: 15px 0 5px 0; font-size: 14px; color: {self.BRAND_BLACK};">Weekly AI Newsletter for the UK Mortgage Industry</p>
-                            <p style="margin: 5px 0 0 0; font-size: 12px; color: #666666;">Issue #{issue_number} • {date}</p>
+                            <p style="margin: 15px 0 5px 0; font-size: 14px; color: {self.BRAND_TEXT};">Weekly AI Newsletter for the UK Mortgage Industry</p>
+                            <p style="margin: 5px 0 0 0; font-size: 12px; color: {self.BRAND_MUTED};">Issue #{issue_number} &bull; {date}</p>
                         </td>
                     </tr>
-                    
+
                     <!-- Main Content -->
                     <tr>
-                        <td style="padding: 30px 40px;">
+                        <td style="padding: 30px 40px; background-color: {self.BRAND_CONTENT_BG};">
                             {content}
                         </td>
                     </tr>
-                    
+
                     <!-- Footer -->
                     <tr>
-                        <td align="center" style="padding: 30px 40px; border-top: 2px solid {self.BRAND_LILAC};">
-                            <p style="margin: 0 0 10px 0; font-size: 12px; color: #666666;">You're receiving this because you subscribed to the mortgagelab.ai newsletter.</p>
+                        <td align="center" style="padding: 30px 40px; border-top: 2px solid {self.BRAND_LILAC}; background-color: {self.BRAND_CONTENT_BG};">
+                            <p style="margin: 0 0 10px 0; font-size: 12px; color: {self.BRAND_MUTED};">You're receiving this because you subscribed to the mortgagelab.ai newsletter.</p>
                             <p style="margin: 0; font-size: 12px;">
                                 <a href="*|UNSUB|*" style="color: {self.BRAND_PURPLE}; text-decoration: none;">Unsubscribe</a>
                                 <span style="color: {self.BRAND_LILAC};"> | </span>
@@ -178,7 +183,7 @@ class HTMLFormatter:
                             </p>
                         </td>
                     </tr>
-                    
+
                 </table>
             </td>
         </tr>
@@ -212,6 +217,3 @@ if __name__ == '__main__':
 
     formatter.save_html(html, '../output/newsletter.html')
     print("HTML newsletter created successfully!")
-
-
-
