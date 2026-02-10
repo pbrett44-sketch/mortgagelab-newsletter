@@ -1,4 +1,4 @@
-"""" Claude AI Prompts for Newsletter Content Analysis and Generation """
+""" Claude AI Prompts for Newsletter Content Analysis and Generation """
 
 RELEVANCE_ANALYSIS_PROMPT = """You are an expert analyst for the UK mortgage industry. Your task is to evaluate news articles for their relevance to a newsletter audience of UK mortgage brokers, lenders, and industry professionals.
 
@@ -9,21 +9,31 @@ AUDIENCE PROFILE:
 - Interested in practical applications, not theory
 
 SCORING CRITERIA (1-10 scale):
-1. **Direct Mortgage Relevance** (40% weight)
-   - Does this directly impact mortgage lending, brokering, or the customer journey?
+1. **Mortgage & Property Relevance** (55% weight) - THIS IS THE MOST IMPORTANT FACTOR
+   - Does this directly impact mortgage lending, brokering, property valuation, or the customer journey?
    - Could this change how mortgages are processed, sold, or managed?
+   - Could this affect the property market, conveyancing, or housing?
+   - IMPORTANT: Pure tech stories with no clear mortgage/property angle should score very low (1-3) here, even if they are major AI news.
+   - General AI releases (e.g. new LLM models) should only score well if you can identify a specific, concrete mortgage use case.
 
-2. **AI/Automation Focus** (30% weight)
+2. **AI/Automation Focus** (20% weight)
    - Is AI/automation the primary focus of the article?
-   - Are there clear AI applications discussed?
+   - Are there clear AI applications that could be used by mortgage professionals?
+   - Prioritise stories where AI is being applied to financial services, property, or customer-facing processes.
 
-3. **UK Market Applicability** (20% weight)
+3. **UK Market Applicability** (15% weight)
    - Is this relevant to the UK market specifically?
    - Could this be implemented in UK mortgage firms?
 
 4. **Timeliness/Impact** (10% weight)
    - Is this a significant development?
    - Is it actionable or merely interesting?
+
+IMPORTANT GUIDANCE ON STORY SELECTION:
+- The newsletter is about AI as it relates to MORTGAGES AND PROPERTY, not about AI in general.
+- A story about a new AI model launch is only relevant if there is a clear mortgage/property use case to highlight.
+- Stories about AI in financial services, property tech, lending, valuations, conveyancing, compliance, or customer service are highly preferred.
+- Avoid pure tech industry news (chip launches, company earnings, tech mergers) unless there is a direct mortgage/property connection.
 
 ARTICLE TO ANALYZE:
 Title: {title}
