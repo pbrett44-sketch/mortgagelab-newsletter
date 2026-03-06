@@ -1,83 +1,131 @@
 """
-Manual Stories Fetcher - Pulls curated stories from Google Sheets
-for the 'Also This Week' newsletter section
+Manual Stories Loader - Fetches manually added stories from a Google Sheet
+Published as CSV. Paul just types stories into the Google Sheet and
+this module picks them up automatically on the next newsletter run.
 """
 
 import csv
 import io
-import urllib.request
+import os
+import requests
 from typing import List, Dict
 
-# Google Sheet with manual stories (Headline, Summary, Link, Why It Matters)
-SHEET_ID = "1O45AM3FnEVO9nOos3K5hHW9QLy6S6Gk7j7VhUK9CZd0"
-SHEET_GID = "0"
 
-
-def fetch_manual_stories() -> List[Dict]:
+def load_manual_stories(sheet_csv_url: str = None) -> List[Dict]:
     """
-    Fetch manually curated stories from the Google Sheet.
+    Fetch manual stories from a published Google Sheet (CSV format).
+
+    The Google Sheet should have these column headers (Row 1):
+        Headline | Summary | Link | Why It Matters
+
+    Paul just fills in rows beneath those headers. Empty rows are ignored.
+    If the sheet is empty (no data rows), returns an empty list and the
+    newsletter runs with just the automated Top 5 as normal.
+
+    Args:
+        sheet_csv_url: The published CSV URL of the Google Sheet.
+                       Falls back to GOOGLE_SHEET_CSV_URL env var.
 
     Returns:
-        List of story dicts with keys: headline, summary, link, why_it_matters
+        List of story dictionaries ready to merge into the newsletter.
     """
-    url = (
-        f"https://docs.google.com/spreadsheets/d/{SHEET_ID}"
-        f"/export?format=csv&gid={SHEET_GID}"
-    )
+    # Get the URL from argument or environment variable
+    url = sheet_csv_url or os.getenv('GOOGLE_SHEET_CSV_URL', '')
 
-    try:
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            # Follow redirects automatically
-            raw = resp.read().decode('utf-8')
-    except Exception as e:
-        print(f"  Warning: Could not fetch manual stories sheet: {e}")
+    if not url:
+        print("No Google Sheet URL configured. Skipping manual stories.")
         return []
 
-    reader = csv.DictReader(io.StringIO(raw))
+    print("Checking Google Sheet for manual stories...")
+
+    try:
+        response = requests.get(url, timeout=15)
+        response.raise_for_status()
+    except requests.RequestException as e:
+        print(f"  Could not fetch Google Sheet: {e}")
+        print("  Continuing without manual stories.")
+        return []
+
+    # Parse the CSV content
+    content = response.text
+    reader = csv.DictReader(io.StringIO(content))
+
     stories = []
-
     for row in reader:
-        headline = (row.get('Headline') or '').strip()
-        summary = (row.get('Summary') or '').strip()
-        link = (row.get('Link') or '').strip()
-        why = (row.get('Why It Matters') or '').strip()
+        # Normalise column names (strip whitespace, lowercase for matching)
+        cleaned = {k.strip().lower(): v.strip() for k, v in row.items() if k and v}
 
-        # Skip empty rows
-        if not headline or not summary:
+        # Extract fields - be flexible with column naming
+        headline = cleaned.get('headline', '') or cleaned.get('title', '')
+        summary = cleaned.get('summary', '') or cleaned.get('content', '') or cleaned.get('description', '')
+        link = cleaned.get('link', '') or cleaned.get('url', '')
+        why_it_matters = (
+            cleaned.get('why it matters', '') or
+            cleaned.get('why_it_matters', '') or
+            cleaned.get('why it matters for uk mortgages', '') or
+            cleaned.get('matters', '')
+        )
+
+        # Skip rows where headline is empty (probably a blank row)
+        if not headline:
             continue
 
-        stories.append({
+        story = {
             'headline': headline,
             'summary': summary,
             'link': link,
-            'why_it_matters': why,
-        })
+            'why_it_matters': why_it_matters,
+            'is_manual': True  # Flag so the system knows this was added by Paul
+        }
+        stories.append(story)
+
+    if stories:
+        print(f"  Found {len(stories)} manual story/stories from Google Sheet:")
+        for i, s in enumerate(stories):
+            print(f"    {i+1}. {s['headline'][:60]}...")
+    else:
+        print("  Google Sheet is empty. No manual stories this week.")
 
     return stories
 
 
-def format_as_markdown(stories: List[Dict]) -> str:
+def format_manual_stories_for_prompt(manual_stories: List[Dict]) -> str:
     """
-    Format manual stories as markdown matching the newsletter content style,
-    ready to be appended as an 'Also This Week' section.
+    Format manual stories into text that can be appended to the
+    newsletter content. These stories are already written by Paul,
+    so Claude just needs to format them consistently with the rest
+    of the newsletter (not rewrite them).
+
+    Args:
+        manual_stories: List of manual story dicts from load_manual_stories()
+
+    Returns:
+        Formatted text block to append to newsletter content.
     """
-    if not stories:
-        return ''
+    if not manual_stories:
+        return ""
 
-    parts = ['\n---\n\n## Also This Week\n']
+    parts = []
+    parts.append("\n\n---\n\n## Also This Week\n")
 
-    for story in stories:
-        parts.append(f"\n**{story['headline']}**")
-        parts.append(story['summary'])
-
+    for story in manual_stories:
+        part = f"\n**{story['headline']}**\n"
+        if story['summary']:
+            part += f"{story['summary']}\n"
         if story['why_it_matters']:
-            parts.append(f"**Why it matters for UK mortgages:**")
-            parts.append(story['why_it_matters'])
-
+            part += f"**Why it matters for UK mortgages:**\n{story['why_it_matters']}\n"
         if story['link']:
-            parts.append(f"[Read more →]({story['link']})")
+            part += f"[Read more \u2192]({story['link']})\n"
+        parts.append(part)
 
-        parts.append('')  # blank line between stories
+    return "\n".join(parts)
 
-    return '\n'.join(parts)
+
+if __name__ == '__main__':
+    # Quick test - set GOOGLE_SHEET_CSV_URL env var and run this file
+    stories = load_manual_stories()
+    if stories:
+        print("\nFormatted output:")
+        print(format_manual_stories_for_prompt(stories))
+    else:
+        print("\nNo stories found. Make sure GOOGLE_SHEET_CSV_URL is set.")
