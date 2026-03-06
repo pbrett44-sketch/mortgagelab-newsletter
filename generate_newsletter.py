@@ -16,6 +16,7 @@ from feed_aggregator import FeedAggregator
 from ai_analyser import AIAnalyzer
 from content_generator import ContentGenerator
 from html_formatter import HTMLFormatter
+from manual_stories import fetch_manual_stories, format_as_markdown
 
 
 def main():
@@ -76,24 +77,42 @@ def main():
         print("─"*70)
         generator = ContentGenerator(api_key)
         newsletter_content = generator.generate_newsletter(top_5)
+
+        # Step 3b: Fetch manual stories from Google Sheets
+        print("\n  Fetching manual stories from Google Sheets...")
+        manual_stories = fetch_manual_stories()
+        if manual_stories:
+            print(f"  Found {len(manual_stories)} manual story/stories")
+            also_this_week = format_as_markdown(manual_stories)
+            # Insert 'Also This Week' after the Top 5 section (before the quiz)
+            # Match quiz heading in various formats Claude may use
+            import re
+            quiz_match = re.search(r'\n---\n\s*\n##.*(?:Quiz|quiz)', newsletter_content)
+            if quiz_match:
+                insert_pos = quiz_match.start()
+                newsletter_content = (
+                    newsletter_content[:insert_pos]
+                    + also_this_week
+                    + newsletter_content[insert_pos:]
+                )
+            else:
+                # Fallback: append before the last section
+                newsletter_content += also_this_week
+        else:
+            print("  No manual stories found (sheet empty or unavailable)")
+
         generator.save_newsletter(newsletter_content, newsletter_content_path)
-        
+
         # Step 4: Format as HTML
         print("\n" + "─"*70)
         print("STEP 4: Converting to HTML for Mailchimp")
         print("─"*70)
         formatter = HTMLFormatter()
-        
-        # Calculate issue number (could be improved with a counter file)
-        import glob
-        previous_newsletters = glob.glob(os.path.join(output_dir, 'newsletter_*.html'))
-        issue_number = len(previous_newsletters) + 1
-        
+
         html = formatter.format_newsletter(
             newsletter_content,
             metadata={
-                'date': datetime.now().strftime('%B %d, %Y'),
-                'issue_number': str(issue_number)
+                'date': datetime.now().strftime('%B %d, %Y')
             }
         )
         formatter.save_html(html, newsletter_html_path)

@@ -41,3 +41,9 @@ jobs:
           output/newsletter_*.html
           output/newsletter_content_*.txt
         retention-days: 90
+
+    - name: Publish draft to Mailchimp
+      env:
+        MAILCHIMP_API_KEY: ${{ secrets.MAILCHIMP_API_KEY }}
+      run: |
+        python src/mailchimp_publish.py
