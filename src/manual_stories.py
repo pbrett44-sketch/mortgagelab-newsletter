@@ -115,7 +115,7 @@ def format_manual_stories_for_prompt(manual_stories: List[Dict]) -> str:
         if story['why_it_matters']:
             part += f"**Why it matters for UK mortgages:**\n{story['why_it_matters']}\n"
         if story['link']:
-            part += f"[Read more \u2192]({story['link']})\n"
+                        part += f"[Read more ->]({story['link']})\n"
         parts.append(part)
 
     return "\n".join(parts)
