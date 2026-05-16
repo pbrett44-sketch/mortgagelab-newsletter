@@ -86,8 +86,8 @@ def main():
         if manual_stories:
             print(f"  Appending {len(manual_stories)} manual story/stories...")
             manual_section = format_manual_stories_for_prompt(manual_stories)
-                # Sanitise manual stories content too
-                manual_section = sanitise_unicode(manual_section)
+            # Sanitise manual stories content too
+            manual_section = sanitise_unicode(manual_section)
             # Insert manual stories before the quiz section
             # Split at the quiz section and insert manual stories before it
             if '## This Week' in newsletter_content or '## SECTION 2' in newsletter_content:
