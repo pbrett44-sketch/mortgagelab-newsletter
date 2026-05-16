@@ -52,8 +52,6 @@ class HTMLFormatter:
     def _convert_to_html(self, content: str) -> str:
         """Convert markdown-style content to HTML with dark theme brand colours"""
 
-        # Replace ASCII arrows with HTML entity for clean rendering
-        content = content.replace('->', '&rarr;')
         
         # Split into sections
         sections = content.split('---')
