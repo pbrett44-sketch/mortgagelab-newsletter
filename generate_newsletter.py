@@ -14,7 +14,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
 from feed_aggregator import FeedAggregator
 from ai_analyser import AIAnalyzer
-from content_generator import ContentGenerator
+from content_generator import ContentGenerator, sanitise_unicode
 from html_formatter import HTMLFormatter
 from manual_stories import load_manual_stories, format_manual_stories_for_prompt
 
@@ -86,6 +86,8 @@ def main():
         if manual_stories:
             print(f"  Appending {len(manual_stories)} manual story/stories...")
             manual_section = format_manual_stories_for_prompt(manual_stories)
+                # Sanitise manual stories content too
+                manual_section = sanitise_unicode(manual_section)
             # Insert manual stories before the quiz section
             # Split at the quiz section and insert manual stories before it
             if '## This Week' in newsletter_content or '## SECTION 2' in newsletter_content:
