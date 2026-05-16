@@ -75,7 +75,7 @@ For each of the articles provided, write:
 [2-3 sentence summary that explains what happened, avoiding jargon]
 **Why it matters for UK mortgages:**
 [1-2 sentences explaining the practical implication for mortgage professionals]
-[Read more â](USE_ARTICLE_LINK_HERE)
+[Read more ->](USE_ARTICLE_LINK_HERE)
 
 ---
 
@@ -110,11 +110,13 @@ IMPORTANT RULES:
 - Explain AI terms simply (e.g., "machine learning - when computers learn from patterns in data")
 - Focus on "what this means" not "what this is"
 - UK spelling throughout
-- No emojis
+- No emojis, no unicode symbols, no special characters. Use ONLY plain ASCII text throughout.
+- Use -> for arrows. Do not use unicode arrows, bullet symbols, or any non-ASCII characters.
+- Do not use smart quotes, em dashes, en dashes, or typographic characters. Use plain quotes and hyphens only.
 - Professional but conversational
 - Make the quiz answer educational, not just correct/incorrect
 
-RESPOND WITH THE COMPLETE NEWSLETTER CONTENT IN PLAIN TEXT FORMAT."""
+RESPOND WITH THE COMPLETE NEWSLETTER CONTENT IN PLAIN TEXT FORMAT (ASCII ONLY)."""
 
 HEADLINE_GENERATION_PROMPT = """Generate a compelling, short newsletter headline for this AI story targeting UK mortgage professionals.
 
