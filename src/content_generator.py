@@ -62,6 +62,10 @@ def sanitise_unicode(text: str) -> str:
     )
     text = emoji_pattern.sub('', text)
 
+    # Nuclear fallback: strip ALL remaining non-ASCII characters.
+    # Mobile email clients render unsupported Unicode as black blocks.
+    text = text.encode('ascii', 'ignore').decode('ascii')
+
     return text
 
 
