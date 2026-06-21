@@ -26,7 +26,7 @@ class AIAnalyzer:
     def __init__(self, api_key: str):
         """Initialize Claude API client"""
         self.client = Anthropic(api_key=api_key)
-        self.model = "claude-sonnet-4-20250514"
+        self.model = "claude-sonnet-4-6"
     
     def analyze_articles(self, articles: List[Dict]) -> List[Dict]:
         """

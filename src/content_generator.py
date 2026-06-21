@@ -73,7 +73,7 @@ class ContentGenerator:
     def __init__(self, api_key: str):
         """Initialize Claude API client"""
         self.client = Anthropic(api_key=api_key)
-        self.model = "claude-sonnet-4-20250514"
+        self.model = "claude-sonnet-4-6"
 
     def generate_newsletter(self, top_articles: List[Dict]) -> str:
         """
@@ -168,7 +168,7 @@ class ContentGenerator:
     def __init__(self, api_key: str):
         """Initialize Claude API client"""
         self.client = Anthropic(api_key=api_key)
-        self.model = "claude-sonnet-4-20250514"
+        self.model = "claude-sonnet-4-6"
     
     def generate_newsletter(self, top_articles: List[Dict]) -> str:
         """
