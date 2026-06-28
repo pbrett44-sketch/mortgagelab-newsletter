@@ -7,6 +7,7 @@ this module picks them up automatically on the next newsletter run.
 import csv
 import io
 import os
+import re
 import requests
 from typing import List, Dict
 
@@ -119,6 +120,67 @@ def format_manual_stories_for_prompt(manual_stories: List[Dict]) -> str:
         parts.append(part)
 
     return "\n".join(parts)
+
+
+# Section headers that mark the START of the Quiz / Weekend blocks. The manual
+# "Also This Week" section must be inserted BEFORE the earliest of these, so it
+# always sits directly after the Top Stories and ahead of the quiz and weekend
+# trivia. Patterns are matched case-insensitively at the start of a line and
+# cover the header variants Claude produces (with or without "SECTION n:",
+# and bold "**...**" instead of an h2).
+_QUIZ_WEEKEND_ANCHORS = [
+    r'^[ \t]*#{1,6}[ \t]*SECTION[ \t]*2\b',          # ## SECTION 2: ...
+    r"^[ \t]*#{1,6}[ \t]*.*This Week.?s Quiz",        # ## This Week's Quiz
+    r'^[ \t]*#{1,6}[ \t]*Quiz\b',                     # ## Quiz
+    r"^[ \t]*\*\*[ \t]*This Week.?s Quiz",            # **This Week's Quiz**
+    r'^[ \t]*#{1,6}[ \t]*SECTION[ \t]*3\b',           # ## SECTION 3: ...
+    r'^[ \t]*#{1,6}[ \t]*Something for the Weekend',  # ## Something for the Weekend
+    r'^[ \t]*\*\*[ \t]*Something for the Weekend',    # **Something for the Weekend**
+]
+
+
+def insert_manual_section(newsletter_content: str, manual_section: str) -> str:
+    """
+    Insert the manual "Also This Week" block directly after the Top Stories and
+    BEFORE the Quiz and Weekend sections, whatever header format the model used.
+
+    Falls back to inserting before the Quiz Answer, and only as a last resort
+    appends at the end - it never silently drops the section. Avoids doubling up
+    the "---" divider that usually precedes the quiz.
+    """
+    if not manual_section.strip():
+        return newsletter_content
+
+    block = manual_section.strip()  # e.g. "---\n\n## Also This Week\n..."
+
+    # Find the earliest quiz/weekend anchor.
+    earliest = None
+    for pattern in _QUIZ_WEEKEND_ANCHORS:
+        match = re.search(pattern, newsletter_content,
+                          re.IGNORECASE | re.MULTILINE)
+        if match and (earliest is None or match.start() < earliest):
+            earliest = match.start()
+
+    # Last-resort anchors if no quiz/weekend header was found.
+    if earliest is None:
+        for pattern in [r'^[ \t]*#{1,6}[ \t]*.*Answer',
+                        r'^[ \t]*\*\*[ \t]*Answer']:
+            match = re.search(pattern, newsletter_content,
+                              re.IGNORECASE | re.MULTILINE)
+            if match and (earliest is None or match.start() < earliest):
+                earliest = match.start()
+
+    if earliest is None:
+        # Nothing to anchor to - append rather than lose the section.
+        return newsletter_content.rstrip() + "\n\n" + block + "\n"
+
+    head = newsletter_content[:earliest]
+    tail = newsletter_content[earliest:]
+    # Drop any trailing "---" divider(s) on the head so we don't double them up
+    # (block already starts with its own divider).
+    head = re.sub(r'(?:\n[ \t]*-{3,}[ \t]*)+\s*$', '\n', head).rstrip()
+
+    return head + "\n\n" + block + "\n\n---\n\n" + tail
 
 
 if __name__ == '__main__':

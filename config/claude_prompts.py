@@ -1,6 +1,8 @@
 """ Claude AI Prompts for Newsletter Content Analysis and Generation """
 
-RELEVANCE_ANALYSIS_PROMPT = """You are an expert analyst for the UK mortgage industry. Your task is to evaluate news articles for their relevance to a newsletter audience of UK mortgage brokers, lenders, and industry professionals.
+RELEVANCE_ANALYSIS_PROMPT = """You are an expert analyst for an AI newsletter aimed at the UK mortgage industry. Your task is to evaluate news articles for a newsletter audience of UK mortgage brokers, lenders, and industry professionals.
+
+THIS IS AN AI NEWSLETTER. Every story selected MUST be genuinely about artificial intelligence, machine learning, or automation. A story with no real AI/automation angle does NOT belong here, no matter how interesting it is or how relevant it is to mortgages or property. Non-AI mortgage and housing news - rate changes, house-price data, lender product launches, tenancy/Renters' Rights changes, green-mortgage or EPC stories, market commentary - must be scored very low and excluded UNLESS AI is genuinely central to the story.
 
 AUDIENCE PROFILE:
 - UK mortgage brokers and lenders
@@ -9,31 +11,30 @@ AUDIENCE PROFILE:
 - Interested in practical applications, not theory
 
 SCORING CRITERIA (1-10 scale):
-1. **Mortgage & Property Relevance** (55% weight) - THIS IS THE MOST IMPORTANT FACTOR
-   - Does this directly impact mortgage lending, brokering, property valuation, or the customer journey?
-   - Could this change how mortgages are processed, sold, or managed?
-   - Could this affect the property market, conveyancing, or housing?
-   - IMPORTANT: Pure tech stories with no clear mortgage/property angle should score very low (1-3) here, even if they are major AI news.
-   - General AI releases (e.g. new LLM models) should only score well if you can identify a specific, concrete mortgage use case.
 
-2. **AI/Automation Focus** (20% weight)
-   - Is AI/automation the primary focus of the article?
-   - Are there clear AI applications that could be used by mortgage professionals?
-   - Prioritise stories where AI is being applied to financial services, property, or customer-facing processes.
+1. **AI / Automation Relevance** (THE GATE - most important factor, ~50% weight)
+   - Is AI, machine learning, or automation genuinely central to this story?
+   - If AI/automation is NOT a real, substantive element, score this 1-2 AND set the overall relevance_score to 1-2. The story must be excluded.
+   - A passing mention of "AI" in a story that is really about something else does NOT count.
 
-3. **UK Market Applicability** (15% weight)
-   - Is this relevant to the UK market specifically?
-   - Could this be implemented in UK mortgage firms?
+2. **Application to our audience** (~30% weight) - among genuine AI stories, prefer them in THIS priority order:
+   a. AI applied to UK mortgages, property, lending, brokering, valuations, conveyancing, or the borrower journey - HIGHEST priority.
+   b. AI and UK financial services REGULATION - ESPECIALLY the FCA and other regulators (the Bank of England, PRA, ICO) and their work on AI: guidance, consultations, discussion papers, speeches, rules. The regulator is very active on AI and these stories are highly valued.
+   c. AI in UK financial services more broadly - banking, insurance, payments, compliance, fraud, customer service.
+   d. General AI developments ONLY where there is a clear, specific use case for mortgage or financial-services professionals.
 
-4. **Timeliness/Impact** (10% weight)
-   - Is this a significant development?
-   - Is it actionable or merely interesting?
+3. **UK Market Applicability** (~12% weight)
+   - Is this relevant to the UK market specifically, and could it be implemented in UK firms?
 
-IMPORTANT GUIDANCE ON STORY SELECTION:
-- The newsletter is about AI as it relates to MORTGAGES AND PROPERTY, not about AI in general.
-- A story about a new AI model launch is only relevant if there is a clear mortgage/property use case to highlight.
-- Stories about AI in financial services, property tech, lending, valuations, conveyancing, compliance, or customer service are highly preferred.
-- Avoid pure tech industry news (chip launches, company earnings, tech mergers) unless there is a direct mortgage/property connection.
+4. **Timeliness/Impact** (~8% weight)
+   - Is this a significant, actionable development?
+
+HOW TO SET relevance_score (the overall score used for ranking):
+- No genuine AI/automation angle -> 1-2 (exclude), regardless of mortgage relevance.
+- Genuine AI story applied to UK mortgages/property -> 8-10.
+- Genuine AI story about the FCA/regulator or UK financial services -> 6-9.
+- Genuine AI story in financial services with a clear professional use case -> 5-7.
+- Genuine AI but only a weak or generic link to our audience -> 3-5.
 
 ARTICLE TO ANALYZE:
 Title: {title}
@@ -48,7 +49,7 @@ RESPOND IN JSON FORMAT ONLY:
   "uk_applicability": <1-10>,
   "timeliness": <1-10>,
   "reasoning": "<one sentence explaining the score>",
-  "mortgage_angle": "<how this specifically relates to UK mortgages, or 'Not applicable' if weak connection>"
+  "mortgage_angle": "<how this relates to UK mortgages or, failing that, to UK financial services / the regulator; or 'Not applicable' if there is no genuine AI angle>"
 }}"""
 
 NEWSLETTER_GENERATION_PROMPT = """You are writing a weekly AI newsletter for UK mortgage industry professionals. Your audience consists of brokers, lenders, and industry experts with LOW AI LITERACY.
@@ -69,7 +70,7 @@ TOP ARTICLES THIS WEEK:
 
 CREATE THE FOLLOWING NEWSLETTER SECTIONS:
 
-## SECTION 1: Top 5 AI Stories (Main Content)
+## SECTION 1: Top AI Stories (Main Content)
 For each of the articles provided, write:
 **[Compelling Headline - keep it short and punchy]**
 [2-3 sentence summary that explains what happened, avoiding jargon]

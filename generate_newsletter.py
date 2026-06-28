@@ -16,7 +16,11 @@ from feed_aggregator import FeedAggregator
 from ai_analyser import AIAnalyzer
 from content_generator import ContentGenerator, sanitise_unicode
 from html_formatter import HTMLFormatter
-from manual_stories import load_manual_stories, format_manual_stories_for_prompt
+from manual_stories import (
+    load_manual_stories,
+    format_manual_stories_for_prompt,
+    insert_manual_section,
+)
 
 def main():
     """Main newsletter generation pipeline"""
@@ -82,24 +86,16 @@ def main():
         generator = ContentGenerator(api_key)
         newsletter_content = generator.generate_newsletter(top_5)
 
-        # Append manual stories if any were found
+        # Insert manual stories (if any) directly after the Top Stories and
+        # before the Quiz and Weekend sections.
         if manual_stories:
-            print(f"  Appending {len(manual_stories)} manual story/stories...")
+            print(f"  Inserting {len(manual_stories)} manual story/stories "
+                  f"before the Quiz/Weekend sections...")
             manual_section = format_manual_stories_for_prompt(manual_stories)
             # Sanitise manual stories content too
             manual_section = sanitise_unicode(manual_section)
-            # Insert manual stories before the quiz section
-            # Split at the quiz section and insert manual stories before it
-            if '## This Week' in newsletter_content or '## SECTION 2' in newsletter_content:
-                # Find where the quiz section starts
-                for marker in ['## This Week', '## SECTION 2', '## Quiz']:
-                    if marker in newsletter_content:
-                        parts = newsletter_content.split(marker, 1)
-                        newsletter_content = parts[0] + manual_section + "\n\n---\n\n" + marker + parts[1]
-                        break
-            else:
-                # If we can't find the quiz marker, just append before the end
-                newsletter_content += manual_section
+            newsletter_content = insert_manual_section(
+                newsletter_content, manual_section)
 
         generator.save_newsletter(newsletter_content, newsletter_content_path)
 

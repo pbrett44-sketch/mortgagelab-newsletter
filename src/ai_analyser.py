@@ -11,6 +11,25 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config.claude_prompts import RELEVANCE_ANALYSIS_PROMPT
 
+# Minimum AI-focus score for a story to qualify for the Top stories.
+# This is an AI newsletter: stories with little or no genuine AI/automation
+# angle are excluded even if they are highly relevant to mortgages or property.
+AI_FOCUS_MIN = 4
+
+# Deterministic AI guardrail. A story must literally mention AI/automation to
+# qualify, independent of how the model scores it. This is what stops pure
+# mortgage/housing stories (green mortgages, First Homes Fund, Renters' Rights,
+# rate changes) from ever reaching the Top section.
+_AI_KEYWORDS = (
+    'artificial intelligence', 'machine learning', 'deep learning',
+    'generative ai', 'gen ai', 'genai', 'large language model', 'llm',
+    'chatbot', 'chatgpt', 'copilot', 'gemini', 'claude', 'openai', 'anthropic',
+    'automation', 'automated', 'algorithm', 'neural network', 'neural net',
+    'natural language', 'agentic', 'gpt', 'robo-advice', 'roboadvice',
+    'robo advice', 'predictive model', 'computer vision', 'data science',
+)
+_AI_WORD_RE = re.compile(r'\bai\b', re.IGNORECASE)
+
 # Common words to ignore when comparing article similarity
 _STOP_WORDS = frozenset({
     'a', 'an', 'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
@@ -98,6 +117,24 @@ class AIAnalyzer:
         return scores
     
     @staticmethod
+    def _mentions_ai(article: Dict) -> bool:
+        """
+        Deterministic check that AI / automation is genuinely mentioned in the
+        article. Used together with the ai_focus score so a story must BOTH
+        read as AI to the model AND actually contain AI/automation language.
+        """
+        text = (article.get('title', '') + ' '
+                + article.get('full_text', '')).lower()
+        if _AI_WORD_RE.search(text):
+            return True
+        return any(kw in text for kw in _AI_KEYWORDS)
+
+    def _qualifies_as_ai(self, article: Dict) -> bool:
+        """A story qualifies only if it scores as AI AND mentions AI."""
+        return (article.get('ai_focus', 0) >= AI_FOCUS_MIN
+                and self._mentions_ai(article))
+
+    @staticmethod
     def _extract_keywords(text: str) -> Set[str]:
         """Extract meaningful keywords from text for similarity comparison"""
         words = set(re.findall(r'[a-z]+', text.lower()))
@@ -155,13 +192,29 @@ class AIAnalyzer:
             reverse=True
         )
 
+        # AI gate: this is an AI newsletter, so drop anything without a genuine
+        # AI/automation angle regardless of how mortgage-relevant it is. A story
+        # must BOTH score ai_focus >= AI_FOCUS_MIN AND literally mention AI /
+        # automation. This prevents pure mortgage/housing stories (rates, EPC,
+        # green mortgages, First Homes Fund, tenancy law) from filling Top slots.
+        ai_articles = [a for a in sorted_articles if self._qualifies_as_ai(a)]
+        excluded_non_ai = [a for a in sorted_articles
+                           if not self._qualifies_as_ai(a)]
+        if excluded_non_ai:
+            print(f"\nExcluded {len(excluded_non_ai)} non-AI article(s) "
+                  f"(needs ai_focus >= {AI_FOCUS_MIN} AND an AI/automation mention):")
+            for article in excluded_non_ai[:8]:
+                print(f"  - [ai_focus {article.get('ai_focus', 0)}/10 | "
+                      f"mentions_ai={self._mentions_ai(article)}] "
+                      f"{article['title'][:65]}")
+
         # Select top N with deduplication
         top_articles = []
         top_title_kw = []
         top_full_kw = []
         skipped = []
 
-        for article in sorted_articles:
+        for article in ai_articles:
             if len(top_articles) >= top_n:
                 break
             if self._is_duplicate(article, top_articles, top_title_kw, top_full_kw):
@@ -172,9 +225,13 @@ class AIAnalyzer:
             full_text = article.get('title', '') + ' ' + article.get('full_text', '')[:200]
             top_full_kw.append(self._extract_keywords(full_text))
 
-        print(f"\nTop {top_n} articles selected (deduplicated):")
+        print(f"\nTop {len(top_articles)} articles selected (deduplicated):")
         for i, article in enumerate(top_articles):
             print(f"{i+1}. [{article['relevance_score']}/10] {article['title'][:70]}")
+        if len(top_articles) < top_n:
+            print(f"\nNOTE: Only {len(top_articles)} genuine AI story/stories met the bar "
+                  f"(wanted {top_n}). Running with fewer Top stories rather than "
+                  f"padding with non-AI news.")
         if skipped:
             print(f"\nSkipped {len(skipped)} duplicate/similar articles:")
             for article in skipped[:5]:
