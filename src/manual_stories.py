@@ -47,8 +47,10 @@ def load_manual_stories(sheet_csv_url: str = None) -> List[Dict]:
         print("  Continuing without manual stories.")
         return []
 
-    # Parse the CSV content
-    content = response.text
+    # Parse the CSV content. Google Sheets exports UTF-8, but requests often
+    # guesses Latin-1 when the charset is unspecified, which turns characters
+    # like the pound sign and em dash into mojibake. Decode as UTF-8 explicitly.
+    content = response.content.decode('utf-8', errors='replace')
     reader = csv.DictReader(io.StringIO(content))
 
     stories = []

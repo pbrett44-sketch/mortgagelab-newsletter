@@ -62,9 +62,15 @@ def sanitise_unicode(text: str) -> str:
     )
     text = emoji_pattern.sub('', text)
 
-    # Nuclear fallback: strip ALL remaining non-ASCII characters.
-    # Mobile email clients render unsupported Unicode as black blocks.
-    text = text.encode('ascii', 'ignore').decode('ascii')
+    # Strip remaining non-ASCII that mobile clients render as black blocks,
+    # but PRESERVE a small whitelist of well-supported symbols (currency signs,
+    # copyright, etc.) that render correctly and that we want to keep - notably
+    # the pound sign, so figures like "£25" survive intact.
+    _KEEP_NON_ASCII = '£€¥¢©®'
+    text = ''.join(
+        ch for ch in text
+        if ord(ch) < 128 or ch in _KEEP_NON_ASCII
+    )
 
     return text
 
