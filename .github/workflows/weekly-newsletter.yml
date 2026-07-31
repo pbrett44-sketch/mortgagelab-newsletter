@@ -35,6 +35,7 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          ZAPIER_EMAIL_WEBHOOK: ${{ secrets.ZAPIER_EMAIL_WEBHOOK }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           if [ ! -f output/feed_failures.json ]; then
@@ -43,18 +44,24 @@ jobs:
           fi
           echo "::warning::Some RSS feeds returned nothing. See output/feed_failures.json"
           cat output/feed_failures.json
-          if [ -z "${TELEGRAM_BOT_TOKEN}" ]; then
-            echo "TELEGRAM_BOT_TOKEN not set — skipping dead-feed alert."
-            exit 0
-          fi
-          CHAT="${TELEGRAM_CHAT_ID:-8343241401}"
           LIST=$(jq -r '.[] | "• \(.name): \(.error)"' output/feed_failures.json)
           MSG=$(printf '📰 MortgageLab newsletter: dead RSS feed(s)\n\nThe newsletter still generated, but these sources returned nothing:\n\n%s\n\nUsually the publisher moved or dropped the feed. Check robots.txt for a Sitemap/feed line, or the homepage for a <link rel="alternate"> tag, then update rss_feeds.json.\n\nRun: %s' "${LIST}" "${RUN_URL}")
-          curl -sf --max-time 15 \
-            -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-            -H 'Content-Type: application/json' \
-            -d "$(jq -n --arg cid "$CHAT" --arg t "$MSG" '{chat_id: $cid, text: $t}')" \
-            > /dev/null || echo "Telegram alert curl failed — not fatal."
+          SENT=0
+          if [ -n "${TELEGRAM_BOT_TOKEN}" ]; then
+            CHAT="${TELEGRAM_CHAT_ID:-8343241401}"
+            if curl -sf --max-time 15 \
+              -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+              -H 'Content-Type: application/json' \
+              -d "$(jq -n --arg cid "$CHAT" --arg t "$MSG" '{chat_id: $cid, text: $t}')" \
+              > /dev/null; then SENT=1; else echo "Telegram send failed — falling back to email."; fi
+          fi
+          if [ "$SENT" = "0" ] && [ -n "${ZAPIER_EMAIL_WEBHOOK}" ]; then
+            curl -sS --max-time 15 -X POST "$ZAPIER_EMAIL_WEBHOOK" \
+              -H "Content-Type: application/json" \
+              -d "$(jq -n --arg b "$MSG" '{to: "pb@btscc.co.uk", subject: "📰 MortgageLab newsletter: dead RSS feed(s)", body: $b}')" \
+              > /dev/null && SENT=1
+          fi
+          [ "$SENT" = "1" ] || echo "::warning::Dead feeds detected but no alert channel configured."
 
       - name: Get current date
         id: date
@@ -80,16 +87,25 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          ZAPIER_EMAIL_WEBHOOK: ${{ secrets.ZAPIER_EMAIL_WEBHOOK }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          if [ -z "${TELEGRAM_BOT_TOKEN}" ]; then
-            echo "TELEGRAM_BOT_TOKEN not set — skipping failure alert."
-            exit 0
+          MSG=$(printf '⚠️ MortgageLab newsletter run FAILED\n\nNo newsletter was generated this week.\n\nCommon causes: (1) Anthropic API credit balance exhausted — 400 invalid_request_error on every call, top up at console.anthropic.com; (2) the Claude model ID retired — 404 on the model, swap self.model in src/ai_analyser.py and src/content_generator.py to the current Sonnet alias. Open the failed run and check the "Generate newsletter" step.\n\nFailed run: %s\n\nRe-run after fixing: gh workflow run weekly-newsletter.yml --ref main' "${RUN_URL}")
+          SENT=0
+          if [ -n "${TELEGRAM_BOT_TOKEN}" ]; then
+            CHAT="${TELEGRAM_CHAT_ID:-8343241401}"
+            if curl -sf --max-time 15 \
+              -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+              -H 'Content-Type: application/json' \
+              -d "$(jq -n --arg cid "$CHAT" --arg t "$MSG" '{chat_id: $cid, text: $t}')" \
+              > /dev/null; then SENT=1; else echo "Telegram send failed — falling back to email."; fi
           fi
-          CHAT="${TELEGRAM_CHAT_ID:-8343241401}"
-          MSG=$(printf '⚠️ MortgageLab newsletter run FAILED\n\nNo newsletter was generated this week.\n\nMost common cause: the Claude model ID retired and the API now returns 404. Open the failed run, check the "Generate newsletter" step, and if you see a 404 on the model, swap self.model in src/ai_analyser.py and src/content_generator.py to the current Sonnet alias, then push to main.\n\nFailed run: %s\n\nRe-run after fixing: gh workflow run weekly-newsletter.yml --ref main' "${RUN_URL}")
-          curl -sf --max-time 15 \
-            -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-            -H 'Content-Type: application/json' \
-            -d "$(jq -n --arg cid "$CHAT" --arg t "$MSG" '{chat_id: $cid, text: $t}')" \
-            > /dev/null || echo "Telegram alert curl failed — not fatal."
+          # Fall back to email so a missing/!broken Telegram secret can never leave
+          # a failed run unreported.
+          if [ "$SENT" = "0" ] && [ -n "${ZAPIER_EMAIL_WEBHOOK}" ]; then
+            curl -sS --max-time 15 -X POST "$ZAPIER_EMAIL_WEBHOOK" \
+              -H "Content-Type: application/json" \
+              -d "$(jq -n --arg b "$MSG" '{to: "pb@btscc.co.uk", subject: "⚠️ MortgageLab newsletter run FAILED", body: $b}')" \
+              > /dev/null && SENT=1
+          fi
+          [ "$SENT" = "1" ] || echo "::warning::No alert channel configured — failure went unreported."
