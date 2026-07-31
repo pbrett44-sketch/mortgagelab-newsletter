@@ -173,6 +173,67 @@ class AIAnalyzer:
                 return True
         return False
 
+    # How many top-scoring AI candidates to send to the semantic dedup pass.
+    # Comfortably more than top_n so same-event pairs ranked just outside the
+    # final five are still grouped, without paying to compare the whole pool.
+    SEMANTIC_SHORTLIST = 15
+
+    def _semantic_dedupe_groups(self, articles: List[Dict]) -> Dict[int, int]:
+        """Group articles that report the SAME underlying event.
+
+        Returns {article_index: group_id}. Raises on failure so the caller can
+        decide; it never silently returns partial groupings.
+
+        Why this exists: Jaccard similarity cannot see that "breached" and
+        "hacked", or "its own AI models" and "Claude", describe one event. On
+        31 Jul 2026 this pair scored 0.188 against the 0.25 title threshold and
+        both reached the newsletter:
+          - "Anthropic says its own AI models breached three companies during
+             security testing"
+          - "Anthropic says Claude accidentally hacked real companies too"
+        Lowering the threshold is not a fix: the nearest genuinely-distinct pair
+        measured 0.154, leaving a 0.026 margin, and a false merge silently drops
+        a real story — worse than a duplicate, which is at least visible.
+        """
+        listing = "\n".join(
+            f"{i}. {a.get('title', '')[:160]}"
+            for i, a in enumerate(articles)
+        )
+        prompt = (
+            "Below are news headlines. Group together any that report the SAME "
+            "underlying news event, even when the wording differs completely "
+            "(different outlets, synonyms such as breached/hacked, or a company "
+            "name in one and its product name in the other).\n\n"
+            "Two headlines are the same event only if reporting one makes "
+            "reporting the other redundant. Different developments at the same "
+            "company are DIFFERENT events and must not be grouped.\n\n"
+            f"{listing}\n\n"
+            "Respond with JSON only, no prose: a list of groups, each group a "
+            "list of the integer indices belonging to it. Every index must "
+            "appear exactly once. Singletons get their own one-element group.\n"
+            'Example: {"groups": [[0, 3], [1], [2]]}'
+        )
+        message = self.client.messages.create(
+            model=self.model,
+            max_tokens=1000,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        raw = message.content[0].text.strip()
+        match = re.search(r'\{.*\}', raw, re.DOTALL)
+        if not match:
+            raise ValueError(f"no JSON object in dedup response: {raw[:200]}")
+        groups = json.loads(match.group(0))["groups"]
+
+        # Validate before trusting it: a malformed grouping that drops or
+        # duplicates indices would silently lose stories.
+        flat = [i for g in groups for i in g]
+        if sorted(flat) != list(range(len(articles))):
+            raise ValueError(
+                f"dedup grouping does not partition the input: got {sorted(flat)} "
+                f"for {len(articles)} articles"
+            )
+        return {idx: gid for gid, group in enumerate(groups) for idx in group}
+
     def rank_articles(self, articles: List[Dict], top_n: int = 5) -> List[Dict]:
         """
         Rank articles by relevance score and return top N, with
@@ -208,18 +269,52 @@ class AIAnalyzer:
                       f"mentions_ai={self._mentions_ai(article)}] "
                       f"{article['title'][:65]}")
 
+        # Semantic dedup over the top-scoring shortlist. Runs BEFORE selection so
+        # a same-event pair can never both reach the newsletter. Retried once;
+        # on total failure we fall back to Jaccard alone and say so loudly,
+        # because a duplicate makes the issue unsendable and Paul needs to know
+        # the stronger check did not run.
+        shortlist = ai_articles[:self.SEMANTIC_SHORTLIST]
+        semantic_group: Dict[int, int] = {}
+        self.dedupe_degraded = False
+        if len(shortlist) > 1:
+            for attempt in (1, 2):
+                try:
+                    semantic_group = self._semantic_dedupe_groups(shortlist)
+                    n_groups = len(set(semantic_group.values()))
+                    print(f"\nSemantic dedup: {len(shortlist)} candidates -> "
+                          f"{n_groups} distinct stories")
+                    break
+                except Exception as e:
+                    print(f"  Semantic dedup attempt {attempt} failed: {e}")
+            else:
+                self.dedupe_degraded = True
+                print("::warning::Semantic dedup unavailable — falling back to "
+                      "keyword similarity only. Check the Top stories for "
+                      "duplicates before sending.")
+
         # Select top N with deduplication
         top_articles = []
         top_title_kw = []
         top_full_kw = []
         skipped = []
+        used_groups = set()
 
-        for article in ai_articles:
+        for idx, article in enumerate(ai_articles):
             if len(top_articles) >= top_n:
                 break
+            # Semantic layer: keep only the highest-scoring member of each event
+            # group. ai_articles is already sorted by score, so the first member
+            # reached is the one to keep.
+            gid = semantic_group.get(idx)
+            if gid is not None and gid in used_groups:
+                skipped.append(article)
+                continue
             if self._is_duplicate(article, top_articles, top_title_kw, top_full_kw):
                 skipped.append(article)
                 continue
+            if gid is not None:
+                used_groups.add(gid)
             top_articles.append(article)
             top_title_kw.append(self._extract_keywords(article.get('title', '')))
             full_text = article.get('title', '') + ' ' + article.get('full_text', '')[:200]
