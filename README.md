@@ -46,9 +46,8 @@ This system automatically generates a weekly newsletter featuring:
 
 ## News Sources
 
-### UK Mortgage Press (8 sources)
+### UK Mortgage Press (7 sources)
 - Mortgage Strategy
-- Mortgage Finance Gazette
 - What Mortgage
 - Mortgage Introducer
 - Financial Reporter
@@ -56,20 +55,21 @@ This system automatically generates a weekly newsletter featuring:
 - Bridging & Commercial
 - Mortgage Solutions
 
-### AI/Tech News (6 sources)
+### AI/Tech News (4 sources)
 - TechCrunch AI
 - The Verge AI
 - MIT Technology Review AI
 - VentureBeat AI
-- AI Magazine
-- AI Magazine RSS
 
-### Broadsheet Tech (3 sources)
+### Broadsheet Tech (2 sources)
 - Financial Times Technology
-- The Times Technology
 - The Guardian Technology
 
-**Total: 17 news sources**
+**Total: 13 news sources**, all verified returning content as at 31 July 2026.
+
+Removed 31 July 2026: Mortgage Finance Gazette (site now redirects to Mortgage
+Strategy, so it was a duplicate), The Times Technology (feed discontinued), and
+AI Magazine ×2 (Cloudflare challenge, never worked — see `UPDATE_AI_MAGAZINE.md`).
 
 ## Newsletter Structure
 

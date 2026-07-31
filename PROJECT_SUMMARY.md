@@ -11,7 +11,7 @@
 
 A complete, production-ready automated newsletter system that:
 
-✅ Pulls news from 17 industry sources weekly  
+✅ Pulls news from 13 industry sources weekly  
 ✅ Analyzes articles with Claude AI for mortgage relevance  
 ✅ Generates 5 curated stories + quiz + trivia  
 ✅ Outputs HTML formatted for Mailchimp  
@@ -25,7 +25,7 @@ A complete, production-ready automated newsletter system that:
 ```
 Thursday 9 AM (Automated):
 ├── GitHub Actions triggers Python script
-├── Fetches RSS from 15 news sources
+├── Fetches RSS from 13 news sources
 ├── Claude AI analyzes 50-100 articles
 ├── Ranks by mortgage industry relevance
 ├── Selects top 5 stories
@@ -83,30 +83,29 @@ mortgagelab-newsletter/
 
 ---
 
-## News Sources (17 total)
+## News Sources (13 total)
 
-### UK Mortgage Press (8)
+### UK Mortgage Press (7)
 1. Mortgage Strategy
-2. Mortgage Finance Gazette  
-3. What Mortgage
-4. Mortgage Introducer
-5. Financial Reporter
-6. Mortgage Soup
-7. Bridging & Commercial
-8. Mortgage Solutions
+2. What Mortgage
+3. Mortgage Introducer
+4. Financial Reporter
+5. Mortgage Soup
+6. Bridging & Commercial
+7. Mortgage Solutions
 
-### AI/Tech News (6)
-9. TechCrunch AI
-10. The Verge AI
-11. MIT Technology Review AI
-12. VentureBeat AI
-13. AI Magazine
-14. AI Magazine RSS
+### AI/Tech News (4)
+8. TechCrunch AI
+9. The Verge AI
+10. MIT Technology Review AI
+11. VentureBeat AI
 
-### UK Broadsheet Tech (3)
-15. Financial Times Technology
-16. The Times Technology
-17. The Guardian Technology
+### UK Broadsheet Tech (2)
+12. Financial Times Technology
+13. The Guardian Technology
+
+Cut from 17 to 13 on 31 July 2026. Four entries were dead or duplicated and
+four more had stale URLs. All 13 above are verified returning content.
 
 ---
 
@@ -208,7 +207,7 @@ mortgagelab-newsletter/
 ## Key Features
 
 ✅ **Fully Automated Content Creation**
-- Pulls from 15 quality sources
+- Pulls from 13 quality sources
 - AI analysis for relevance
 - Intelligent ranking
 

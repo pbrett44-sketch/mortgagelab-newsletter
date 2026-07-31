@@ -11,13 +11,19 @@ import requests
 from bs4 import BeautifulSoup
 
 
+class FeedUnavailableError(Exception):
+    """Raised when a feed URL returns nothing usable (moved, dead or blocked)."""
+    pass
+
+
 class FeedAggregator:
     def __init__(self, feeds_config_path: str):
         """Initialize with RSS feeds configuration"""
         with open(feeds_config_path, 'r') as f:
             self.feeds_config = json.load(f)
-        
+
         self.articles = []
+        self.failed_feeds = []
     
     def fetch_all_feeds(self, days_back: int = 7) -> List[Dict]:
         """
@@ -43,14 +49,38 @@ class FeedAggregator:
                 self.articles.extend(articles)
                 print(f"✓ Fetched {len(articles)} articles from {feed['name']}")
             except Exception as e:
+                self.failed_feeds.append({
+                    'name': feed['name'],
+                    'url': feed['url'],
+                    'error': str(e),
+                })
                 print(f"✗ Error fetching {feed['name']}: {str(e)}")
-        
+
         print(f"\nTotal articles collected: {len(self.articles)}")
+
+        if self.failed_feeds:
+            print(f"\n⚠ {len(self.failed_feeds)} of {len(all_feeds)} feeds "
+                  f"returned nothing usable:")
+            for failure in self.failed_feeds:
+                print(f"    - {failure['name']}: {failure['error']}")
+            print("  Check whether the publisher has moved or dropped its feed.")
+
         return self.articles
-    
+
     def _fetch_feed(self, feed_config: Dict, cutoff_date: datetime) -> List[Dict]:
         """Fetch and parse a single RSS feed"""
         parsed_feed = feedparser.parse(feed_config['url'])
+
+        # feedparser does not raise on a dead or moved URL. It returns an object
+        # with no entries and a bozo flag, which reads as "0 articles this week"
+        # and hides the breakage. Check the feed itself before filtering by date.
+        status = parsed_feed.get('status')
+        if status is not None and status >= 400:
+            raise FeedUnavailableError(f"HTTP {status}")
+        if not parsed_feed.entries:
+            reason = parsed_feed.get('bozo_exception') or 'feed returned no entries'
+            raise FeedUnavailableError(str(reason))
+
         articles = []
         
         for entry in parsed_feed.entries:
@@ -113,6 +143,7 @@ class FeedAggregator:
         output_data = {
             'generated_at': datetime.now().isoformat(),
             'article_count': len(self.articles),
+            'failed_feeds': self.failed_feeds,
             'articles': self.articles
         }
         

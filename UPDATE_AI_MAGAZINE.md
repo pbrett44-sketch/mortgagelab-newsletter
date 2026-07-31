@@ -1,6 +1,19 @@
 # RSS Feed Update - AI Magazine Added
 
-**Date:** January 23, 2026  
+> **SUPERSEDED — 31 July 2026.** Both AI Magazine feeds were removed from
+> `rss_feeds.json`. Neither ever worked: both URLs return a Cloudflare
+> `cf-mitigated: challenge` 403, with or without a browser user-agent, so the
+> source contributed nothing between January and July 2026. The assumption
+> below that a broken URL is "gracefully skipped" was the underlying problem —
+> `feedparser` returns an empty result rather than raising, so the failure was
+> silently logged as `✓ Fetched 0 articles` every week. That is now detected;
+> see `FeedUnavailableError` in `src/feed_aggregator.py`.
+>
+> Source counts below are stale. The live count is 13, all verified working.
+> To pursue AI Magazine, RSS is not the route: their email newsletter or a
+> Firecrawl enhanced-tier scrape would be.
+
+**Date:** January 23, 2026
 **Update:** Added AI Magazine RSS feeds
 
 ## Changes Made

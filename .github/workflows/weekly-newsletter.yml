@@ -30,6 +30,32 @@ jobs:
         run: |
           python generate_newsletter.py
 
+      - name: Alert Paul on dead feeds
+        if: always()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ ! -f output/feed_failures.json ]; then
+            echo "All feeds healthy."
+            exit 0
+          fi
+          echo "::warning::Some RSS feeds returned nothing. See output/feed_failures.json"
+          cat output/feed_failures.json
+          if [ -z "${TELEGRAM_BOT_TOKEN}" ]; then
+            echo "TELEGRAM_BOT_TOKEN not set — skipping dead-feed alert."
+            exit 0
+          fi
+          CHAT="${TELEGRAM_CHAT_ID:-8343241401}"
+          LIST=$(jq -r '.[] | "• \(.name): \(.error)"' output/feed_failures.json)
+          MSG=$(printf '📰 MortgageLab newsletter: dead RSS feed(s)\n\nThe newsletter still generated, but these sources returned nothing:\n\n%s\n\nUsually the publisher moved or dropped the feed. Check robots.txt for a Sitemap/feed line, or the homepage for a <link rel="alternate"> tag, then update rss_feeds.json.\n\nRun: %s' "${LIST}" "${RUN_URL}")
+          curl -sf --max-time 15 \
+            -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -H 'Content-Type: application/json' \
+            -d "$(jq -n --arg cid "$CHAT" --arg t "$MSG" '{chat_id: $cid, text: $t}')" \
+            > /dev/null || echo "Telegram alert curl failed — not fatal."
+
       - name: Get current date
         id: date
         run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
@@ -49,16 +75,21 @@ jobs:
         run: |
           python src/mailchimp_publish.py
 
-      - name: Email Paul on failure
+      - name: Alert Paul on failure
         if: failure()
         env:
-          ZAPIER_EMAIL_WEBHOOK: ${{ secrets.ZAPIER_EMAIL_WEBHOOK }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          curl -sS -X POST "$ZAPIER_EMAIL_WEBHOOK" \
-            -H "Content-Type: application/json" \
-            -d "$(jq -n --arg url "$RUN_URL" '{
-              to: "pb@btscc.co.uk",
-              subject: "⚠️ MortgageLab newsletter run FAILED",
-              body: ("The weekly MortgageLab newsletter GitHub Actions run failed and no newsletter was generated this week.\n\nMost common cause: the Claude model ID retired and the API now returns 404. Open the failed run, check the \"Generate newsletter\" step, and if you see a 404 on the model, swap self.model in src/ai_analyser.py and src/content_generator.py to the current Sonnet alias, then push to main.\n\nFailed run: " + $url + "\n\nRe-run after fixing: gh workflow run weekly-newsletter.yml --ref main")
-            }')"
+          if [ -z "${TELEGRAM_BOT_TOKEN}" ]; then
+            echo "TELEGRAM_BOT_TOKEN not set — skipping failure alert."
+            exit 0
+          fi
+          CHAT="${TELEGRAM_CHAT_ID:-8343241401}"
+          MSG=$(printf '⚠️ MortgageLab newsletter run FAILED\n\nNo newsletter was generated this week.\n\nMost common cause: the Claude model ID retired and the API now returns 404. Open the failed run, check the "Generate newsletter" step, and if you see a 404 on the model, swap self.model in src/ai_analyser.py and src/content_generator.py to the current Sonnet alias, then push to main.\n\nFailed run: %s\n\nRe-run after fixing: gh workflow run weekly-newsletter.yml --ref main' "${RUN_URL}")
+          curl -sf --max-time 15 \
+            -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -H 'Content-Type: application/json' \
+            -d "$(jq -n --arg cid "$CHAT" --arg t "$MSG" '{chat_id: $cid, text: $t}')" \
+            > /dev/null || echo "Telegram alert curl failed — not fatal."

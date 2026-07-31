@@ -6,11 +6,6 @@
       "category": "UK Mortgage Press"
     },
     {
-      "name": "Mortgage Finance Gazette",
-      "url": "https://mortgagefinancegazette.com/feed",
-      "category": "UK Mortgage Press"
-    },
-    {
       "name": "What Mortgage",
       "url": "https://whatmortgage.co.uk/feed",
       "category": "UK Mortgage Press"
@@ -22,7 +17,7 @@
     },
     {
       "name": "Financial Reporter",
-      "url": "https://www.financialreporter.co.uk/rss",
+      "url": "https://www.financialreporter.co.uk/rss.asp",
       "category": "UK Financial Press"
     },
     {
@@ -32,12 +27,12 @@
     },
     {
       "name": "Bridging & Commercial",
-      "url": "https://www.bridgingandcommercial.co.uk/rss-feed",
+      "url": "https://bridgingandcommercial.co.uk/feed.xml",
       "category": "Specialist Finance"
     },
     {
       "name": "Mortgage Solutions",
-      "url": "https://mortgagesolutions.co.uk/feed",
+      "url": "https://www.mortgagesolutions.co.uk/feed/",
       "category": "UK Mortgage Press"
     }
   ],
@@ -49,7 +44,7 @@
     },
     {
       "name": "The Verge AI",
-      "url": "https://www.theverge.com/ai-artificial-intelligence/rss/index.xml",
+      "url": "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",
       "category": "AI News"
     },
     {
@@ -61,27 +56,12 @@
       "name": "VentureBeat AI",
       "url": "https://venturebeat.com/category/ai/feed/",
       "category": "AI News"
-    },
-    {
-      "name": "AI Magazine",
-      "url": "https://aimagazine.com/feed",
-      "category": "AI News"
-    },
-    {
-      "name": "AI Magazine RSS",
-      "url": "https://aimagazine.com/rss",
-      "category": "AI News"
     }
   ],
   "broadsheet_tech": [
     {
       "name": "Financial Times Technology",
       "url": "https://www.ft.com/technology?format=rss",
-      "category": "Broadsheet Tech"
-    },
-    {
-      "name": "The Times Technology",
-      "url": "https://www.thetimes.co.uk/technology/rss",
       "category": "Broadsheet Tech"
     },
     {

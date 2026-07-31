@@ -60,6 +60,18 @@ def main():
         articles = aggregator.fetch_all_feeds(days_back=7)
         aggregator.save_articles(articles_raw_path)
 
+        # Record dead feeds so a moved URL cannot rot unnoticed. A single dead
+        # feed must not kill the send, so this warns rather than exits, and the
+        # workflow alerts on the file afterwards.
+        feed_failures_path = os.path.join(output_dir, 'feed_failures.json')
+        if aggregator.failed_feeds:
+            with open(feed_failures_path, 'w', encoding='utf-8') as f:
+                json.dump(aggregator.failed_feeds, f, indent=2, ensure_ascii=False)
+            print(f"\nWARNING: {len(aggregator.failed_feeds)} feed(s) returned "
+                  f"nothing. Details written to {feed_failures_path}")
+        elif os.path.exists(feed_failures_path):
+            os.remove(feed_failures_path)
+
         if len(articles) == 0:
             print("\nERROR: No articles found. Check RSS feeds.")
             sys.exit(1)
