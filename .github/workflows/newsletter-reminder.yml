@@ -1,0 +1,84 @@
+name: Newsletter Reminder
+
+# Thursday morning prompt. The newsletter itself no longer runs on a schedule:
+# this job reads the manual-story sheet, tells Paul what is in it, and asks him
+# to trigger weekly-newsletter.yml when the sheet is ready. No API credit is
+# spent here.
+#
+# 06:17 UTC = 07:17 BST in summer, 06:17 GMT in winter. Off-the-hour minute
+# because GitHub queues top-of-hour crons badly (the old 09:00 newsletter cron
+# fired at 13:12 on 3 Sep 2026).
+on:
+  schedule:
+    - cron: '17 6 * * 4'
+  workflow_dispatch:
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Read the manual story currently in the sheet
+        id: sheet
+        env:
+          GOOGLE_SHEET_CSV_URL: ${{ secrets.GOOGLE_SHEET_CSV_URL }}
+        run: |
+          curl -sfL --max-time 20 "$GOOGLE_SHEET_CSV_URL" -o sheet.csv || : > sheet.csv
+          HEADLINE=$(python3 -c "
+          import csv
+          try:
+              rows = list(csv.reader(open('sheet.csv', encoding='utf-8')))
+          except Exception:
+              rows = []
+          rows = [r for r in rows[1:] if any(c.strip() for c in r)]
+          if not rows:
+              print('(could not read the sheet, or it is EMPTY)')
+          else:
+              print(rows[0][0].strip() or '(row 2 has no headline)')
+          ")
+          echo "Current headline: $HEADLINE"
+          { echo "headline<<HEADLINE_EOF"; echo "$HEADLINE"; echo "HEADLINE_EOF"; } >> "$GITHUB_OUTPUT"
+
+      - name: Prompt Paul
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          ZAPIER_EMAIL_WEBHOOK: ${{ secrets.ZAPIER_EMAIL_WEBHOOK }}
+          HEADLINE: ${{ steps.sheet.outputs.headline }}
+          RUN_WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/weekly-newsletter.yml
+          SHEET_EDIT_URL: https://docs.google.com/spreadsheets/d/1O45AM3FnEVO9nOos3K5hHW9QLy6S6Gk7j7VhUK9CZd0/edit
+        run: |
+          MSG="📰 MortgageLab newsletter is ready to prepare.
+
+          Manual story currently in the sheet:
+          \"${HEADLINE}\"
+
+          If that is this week's story, run the newsletter:
+          • reply \"run the newsletter\" here, or
+          • press Run workflow: ${RUN_WORKFLOW_URL}
+
+          If not, update the sheet first:
+          ${SHEET_EDIT_URL}
+
+          Nothing runs, and no API credit is spent, until you trigger it."
+          SENT=0
+          if [ -n "${TELEGRAM_BOT_TOKEN}" ]; then
+            CHAT="${TELEGRAM_CHAT_ID:-8343241401}"
+            if curl -sf --max-time 15 \
+              -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+              -H 'Content-Type: application/json' \
+              -d "$(jq -n --arg cid "$CHAT" --arg t "$MSG" '{chat_id: $cid, text: $t, disable_web_page_preview: true}')" \
+              > /dev/null; then SENT=1; else echo "Telegram send failed — falling back to email."; fi
+          fi
+          if [ "$SENT" = "0" ] && [ -n "${ZAPIER_EMAIL_WEBHOOK}" ]; then
+            curl -sS --max-time 15 -X POST "$ZAPIER_EMAIL_WEBHOOK" \
+              -H "Content-Type: application/json" \
+              -d "$(jq -n --arg b "$MSG" '{to: "pb@btscc.co.uk", subject: "📰 MortgageLab newsletter: ready to prepare", body: $b}')" \
+              > /dev/null && SENT=1
+          fi
+          if [ "$SENT" = "1" ]; then
+            echo "Reminder sent."
+          else
+            echo "::error::Reminder NOT sent — no alert channel configured."
+            exit 1
+          fi

@@ -1,8 +1,10 @@
 name: Weekly Newsletter Generation
 
+# Manual-only since 4 Sep 2026. The Thursday schedule moved to
+# newsletter-reminder.yml, which prompts Paul to check the manual-story sheet
+# and trigger this workflow himself. Nothing here runs, and no API credit is
+# spent, until he does.
 on:
-  schedule:
-    - cron: '0 9 * * 4'
   workflow_dispatch:
 
 jobs:
