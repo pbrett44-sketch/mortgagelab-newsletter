@@ -1,0 +1,68 @@
+name: Send Mailchimp Campaign
+
+# Manual only. Sends an existing Mailchimp draft to its audience. Always prints
+# the campaign's audience and Mailchimp's send checklist first; with send=false
+# it stops there (a dry run). Use the campaign id, not the web_id.
+#
+#   gh workflow run send-campaign.yml --ref main -f campaign_id=<id> -f send=false
+on:
+  workflow_dispatch:
+    inputs:
+      campaign_id:
+        description: 'Mailchimp campaign id (not web_id)'
+        required: true
+      send:
+        description: 'Actually send to the audience (false = dry run)'
+        type: boolean
+        default: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check and send
+        env:
+          MAILCHIMP_API_KEY: ${{ secrets.MAILCHIMP_API_KEY }}
+          CAMPAIGN_ID: ${{ inputs.campaign_id }}
+          DO_SEND: ${{ inputs.send }}
+        run: |
+          python3 - <<'EOF'
+          import base64, json, os, re, sys, urllib.error, urllib.request
+
+          key = os.environ["MAILCHIMP_API_KEY"]
+          cid = os.environ["CAMPAIGN_ID"]
+          if not re.fullmatch(r"[0-9a-f]{10}", cid):
+              sys.exit(f"Bad campaign id: {cid}")
+          base = f"https://{key.split('-')[-1]}.api.mailchimp.com/3.0"
+          auth = "Basic " + base64.b64encode(f"anystring:{key}".encode()).decode()
+
+          def api(method, path):
+              data = b"" if method == "POST" else None
+              req = urllib.request.Request(base + path, data=data, method=method,
+                                           headers={"Authorization": auth})
+              try:
+                  with urllib.request.urlopen(req) as resp:
+                      body = resp.read()
+                      return json.loads(body) if body else {}
+              except urllib.error.HTTPError as e:
+                  sys.exit(f"Mailchimp API error {e.code} on {method} {path}: {e.read().decode()}")
+
+          c = api("GET", f"/campaigns/{cid}")
+          s, r = c.get("settings", {}), c.get("recipients", {})
+          print(f"Campaign: {s.get('title')} | subject: {s.get('subject_line')} | status: {c.get('status')}")
+          print(f"Audience: {r.get('list_name')} | segment: {r.get('segment_text') or 'none'} | recipients: {r.get('recipient_count')}")
+
+          chk = api("GET", f"/campaigns/{cid}/send-checklist")
+          print(f"Send checklist ready: {chk.get('is_ready')}")
+          for item in chk.get("items", []):
+              print(f"  [{item.get('type')}] {item.get('heading')}: {item.get('details')}")
+
+          if os.environ.get("DO_SEND") != "true":
+              print("Dry run: not sent.")
+              sys.exit(0)
+          if c.get("status") != "save" or not chk.get("is_ready"):
+              sys.exit("Not sending: campaign is not a ready draft.")
+          api("POST", f"/campaigns/{cid}/actions/send")
+          print("SENT to the audience.")
+          EOF
