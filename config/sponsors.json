@@ -1,0 +1,20 @@
+{
+  "label": "Proudly supported by",
+  "rows": [
+    {
+      "logo_height": 50,
+      "sponsors": [
+        {"name": "JammJar", "url": "https://www.jammjar.com/", "logo": "logo-jammjar.jpg", "logo_size": [500, 128]},
+        {"name": "Curvestone AI", "url": "https://www.curvestone.io/", "logo": "logo-curvestone.jpg", "logo_size": [500, 127]}
+      ]
+    },
+    {
+      "logo_height": 44,
+      "sponsors": [
+        {"name": "Roma Finance", "url": "https://romafinance.co.uk/", "logo": "logo-roma.jpg", "logo_size": [352, 196]},
+        {"name": "Keychain", "url": "https://www.keychain.co.uk/", "logo": "logo-keychain.jpg", "logo_size": [500, 179]},
+        {"name": "Instamo", "url": "https://www.instamo.co.uk/", "logo": "logo-instamo.jpg", "logo_size": [350, 280], "logo_height": 60}
+      ]
+    }
+  ]
+}

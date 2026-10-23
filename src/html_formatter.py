@@ -5,6 +5,8 @@ With mortgagelab.ai branding - Dark Tech Theme
 
 from datetime import datetime
 from typing import Dict
+import json
+import os
 import re
 
 
@@ -20,9 +22,25 @@ class HTMLFormatter:
     # Logo URL
     LOGO_URL = "https://raw.githubusercontent.com/pbrett44-sketch/mortgagelab-newsletter/main/mortgagelab-logo.png"
 
+    # Sponsor logos live in assets/sponsors/; who appears, in what order and
+    # where each logo links is set in config/sponsors.json
+    SPONSOR_LOGO_BASE_URL = "https://raw.githubusercontent.com/pbrett44-sketch/mortgagelab-newsletter/main/assets/sponsors/"
+    SPONSORS_CONFIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'config', 'sponsors.json')
+
     def __init__(self, template_path: str = None):
         """Initialize with optional custom template"""
         self.template_path = template_path
+        self.sponsors = self._load_sponsors()
+
+    def _load_sponsors(self) -> Dict:
+        """Load the sponsor strip config. A missing or broken file drops the
+        strip rather than stopping the newsletter."""
+        try:
+            with open(self.SPONSORS_CONFIG, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except (OSError, ValueError) as e:
+            print(f"  No sponsor strip this issue ({e})")
+            return {}
 
     def format_newsletter(self, content: str, metadata: Dict = None) -> str:
         """
@@ -128,6 +146,41 @@ class HTMLFormatter:
 
         return divider.join(html_parts)
 
+    def _build_sponsor_strip(self) -> str:
+        """'Proudly supported by' label plus one centred row of linked logos
+        per row in the config. Logos share a height within a row so mixed
+        shapes line up, unless a sponsor sets its own logo_height (a round
+        logo looks small at the row height); width follows each logo's own
+        proportions."""
+        rows = self.sponsors.get('rows', [])
+        if not rows:
+            return ''
+
+        label = self.sponsors.get('label', 'Proudly supported by')
+        parts = [
+            f'<p style="margin: 22px 0 8px 0; font-size: 11px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: {self.BRAND_LILAC};">{label}</p>'
+        ]
+
+        for row in rows:
+            cells = []
+            for sponsor in row['sponsors']:
+                height = sponsor.get('logo_height', row['logo_height'])
+                src_w, src_h = sponsor['logo_size']
+                width = round(height * src_w / src_h)
+                cells.append(
+                    f'<td style="padding: 5px 6px;">'
+                    f'<a href="{sponsor["url"]}" target="_blank" style="text-decoration: none;">'
+                    f'<img src="{self.SPONSOR_LOGO_BASE_URL}{sponsor["logo"]}" alt="{sponsor["name"]}" width="{width}" height="{height}" '
+                    f'style="display: block; width: {width}px; height: {height}px; border: 0; border-radius: 4px; color: {self.BRAND_TEXT}; font-size: 12px;">'
+                    f'</a></td>'
+                )
+            parts.append(
+                f'<table role="presentation" align="center" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">'
+                f'<tr>{"".join(cells)}</tr></table>'
+            )
+
+        return '\n                            '.join(parts)
+
     def _build_html_template(self, content: str, date: str) -> str:
         """Build complete HTML email template with dark tech theme"""
 
@@ -161,6 +214,7 @@ class HTMLFormatter:
                         <td align="center" style="padding: 30px 40px 20px 40px; border-bottom: 3px solid {self.BRAND_PURPLE}; background-color: {self.BRAND_CONTENT_BG};">
                             <img src="{self.LOGO_URL}" alt="mortgagelab.ai" width="180" height="180" style="display: block; width: 180px; height: auto; max-width: 180px; border: 0;">
                             <p style="margin: 15px 0 5px 0; font-size: 14px; color: {self.BRAND_TEXT};">Weekly AI Newsletter for the UK Mortgage Industry</p>
+                            {self._build_sponsor_strip()}
                             <p style="margin: 5px 0 0 0; font-size: 12px; color: {self.BRAND_MUTED};">{date}</p>
                         </td>
                     </tr>
