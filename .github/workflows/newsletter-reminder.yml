@@ -39,12 +39,51 @@ jobs:
           echo "Current headline: $HEADLINE"
           { echo "headline<<HEADLINE_EOF"; echo "$HEADLINE"; echo "HEADLINE_EOF"; } >> "$GITHUB_OUTPUT"
 
+      - name: Read the Recent Activity tab
+        id: activity
+        env:
+          GOOGLE_SHEET_CSV_URL: ${{ secrets.GOOGLE_SHEET_CSV_URL }}
+        run: |
+          # Same sheet, Recent Activity tab. The gid matches ACTIVITY_TAB_GID
+          # in src/recent_activity.py.
+          ACTIVITY_URL=$(python3 -c "
+          import os
+          from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
+          p = urlsplit(os.environ.get('GOOGLE_SHEET_CSV_URL', ''))
+          q = dict(parse_qsl(p.query))
+          q['gid'] = '257547497'
+          if '/pub' in p.path:
+              q['single'] = 'true'
+          print(urlunsplit(p._replace(query=urlencode(q), fragment='')))
+          ")
+          curl -sfL --max-time 20 "$ACTIVITY_URL" -o activity.csv || rm -f activity.csv
+          ACTIVITY=$(python3 -c "
+          import csv
+          try:
+              rows = list(csv.DictReader(open('activity.csv', encoding='utf-8')))
+          except Exception:
+              print('(could not read the Recent Activity tab)')
+              raise SystemExit
+          lines = []
+          for r in rows:
+              r = {(k or '').strip().lower(): (v or '').strip() for k, v in r.items()}
+              title = r.get('title') or r.get('headline')
+              if not title:
+                  continue
+              label = ' | '.join(x for x in (r.get('type') or r.get('category'), r.get('date') or r.get('when')) if x)
+              lines.append('• ' + title + (' (' + label + ')' if label else ''))
+          print('\n'.join(lines) or '(none, so the section is left out this week)')
+          ")
+          echo "Recent Activity: $ACTIVITY"
+          { echo "items<<ACTIVITY_EOF"; echo "$ACTIVITY"; echo "ACTIVITY_EOF"; } >> "$GITHUB_OUTPUT"
+
       - name: Prompt Paul
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           ZAPIER_EMAIL_WEBHOOK: ${{ secrets.ZAPIER_EMAIL_WEBHOOK }}
           HEADLINE: ${{ steps.sheet.outputs.headline }}
+          ACTIVITY: ${{ steps.activity.outputs.items }}
           RUN_WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/weekly-newsletter.yml
           SHEET_EDIT_URL: https://docs.google.com/spreadsheets/d/1O45AM3FnEVO9nOos3K5hHW9QLy6S6Gk7j7VhUK9CZd0/edit
         run: |
@@ -53,7 +92,10 @@ jobs:
           Manual story currently in the sheet:
           \"${HEADLINE}\"
 
-          If that is this week's story, run the newsletter:
+          Recent Activity in the sheet:
+          ${ACTIVITY}
+
+          If that is all right for this week, run the newsletter:
           • reply \"run the newsletter\" here, or
           • press Run workflow: ${RUN_WORKFLOW_URL}
 

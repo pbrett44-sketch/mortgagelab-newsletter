@@ -21,6 +21,7 @@ from manual_stories import (
     format_manual_stories_for_prompt,
     insert_manual_section,
 )
+from recent_activity import load_recent_activity, format_recent_activity
 
 def main():
     """Main newsletter generation pipeline"""
@@ -90,6 +91,7 @@ def main():
         print("STEP 3: Checking for Manual Stories")
         print("-"*70)
         manual_stories = load_manual_stories()
+        recent_activity = load_recent_activity()
 
         # Step 4: Generate Newsletter Content
         print("\n" + "-"*70)
@@ -108,6 +110,16 @@ def main():
             manual_section = sanitise_unicode(manual_section)
             newsletter_content = insert_manual_section(
                 newsletter_content, manual_section)
+
+        # Recent Activity uses the same anchor (before Quiz/Weekend), and goes
+        # in second so it lands after "Also This Week".
+        if recent_activity:
+            print(f"  Inserting {len(recent_activity)} Recent Activity item(s) "
+                  f"before the Quiz/Weekend sections...")
+            activity_section = sanitise_unicode(
+                format_recent_activity(recent_activity))
+            newsletter_content = insert_manual_section(
+                newsletter_content, activity_section)
 
         generator.save_newsletter(newsletter_content, newsletter_content_path)
 
@@ -132,6 +144,8 @@ def main():
         print(f"\nNewsletter generated successfully at: {datetime.now().strftime('%H:%M:%S')}")
         if manual_stories:
             print(f"  Includes {len(manual_stories)} manual story/stories from Google Sheet")
+        if recent_activity:
+            print(f"  Includes {len(recent_activity)} Recent Activity item(s) from Google Sheet")
         print(f"\nOutput files:")
         print(f"  Raw articles: {articles_raw_path}")
         print(f"  Analysed articles: {articles_analyzed_path}")
