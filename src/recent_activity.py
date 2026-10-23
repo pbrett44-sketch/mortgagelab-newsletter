@@ -19,7 +19,7 @@ from html_formatter import HTMLFormatter
 # secret; only the tab id lives here.
 ACTIVITY_TAB_GID = '257547497'
 
-SECTION_TITLE = 'Recent Activity from Mortgage Lab'
+SECTION_TITLE = 'From the Lab'
 
 
 def activity_csv_url(stories_csv_url: str) -> str:
