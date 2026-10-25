@@ -5,6 +5,11 @@ name: Newsletter Reminder
 # to trigger weekly-newsletter.yml when the sheet is ready. No API credit is
 # spent here.
 #
+# Telegram, plus an email every week (Paul, 25 Oct 2026), so the Morning Desk
+# sees it whether or not Telegram worked. The email is a visual report built by
+# scripts/reminder_email.py once the HTML Zap's webhook is a repo secret, and
+# plain text until then or if the build fails.
+#
 # 06:17 UTC = 07:17 BST in summer, 06:17 GMT in winter. Off-the-hour minute
 # because GitHub queues top-of-hour crons badly (the old 09:00 newsletter cron
 # fired at 13:12 on 3 Sep 2026).
@@ -18,6 +23,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
       - name: Read the manual story currently in the sheet
         id: sheet
         env:
@@ -82,6 +90,7 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           ZAPIER_EMAIL_WEBHOOK: ${{ secrets.ZAPIER_EMAIL_WEBHOOK }}
+          ZAPIER_HTML_EMAIL_WEBHOOK: ${{ secrets.ZAPIER_HTML_EMAIL_WEBHOOK }}
           HEADLINE: ${{ steps.sheet.outputs.headline }}
           ACTIVITY: ${{ steps.activity.outputs.items }}
           RUN_WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/weekly-newsletter.yml
@@ -110,12 +119,24 @@ jobs:
               -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
               -H 'Content-Type: application/json' \
               -d "$(jq -n --arg cid "$CHAT" --arg t "$MSG" '{chat_id: $cid, text: $t, disable_web_page_preview: true}')" \
-              > /dev/null; then SENT=1; else echo "Telegram send failed — falling back to email."; fi
+              > /dev/null; then SENT=1; else echo "Telegram send failed."; fi
           fi
-          if [ "$SENT" = "0" ] && [ -n "${ZAPIER_EMAIL_WEBHOOK}" ]; then
-            curl -sS --max-time 15 -X POST "$ZAPIER_EMAIL_WEBHOOK" \
+          # ZAPIER_EMAIL_WEBHOOK's Zap sends plain text (an HTML body arrives as
+          # raw markup, tested 25 Oct 2026), so the visual version needs a Zap
+          # whose Outlook step sends HTML. Until ZAPIER_HTML_EMAIL_WEBHOOK exists
+          # the email goes as plain text.
+          HOOK="${ZAPIER_EMAIL_WEBHOOK}"; BODY="$MSG"
+          if [ -n "${ZAPIER_HTML_EMAIL_WEBHOOK}" ]; then
+            if HTML=$(python3 scripts/reminder_email.py); then
+              HOOK="${ZAPIER_HTML_EMAIL_WEBHOOK}"; BODY="$HTML"
+            else
+              echo "Visual email failed to build — sending plain text."
+            fi
+          fi
+          if [ -n "${HOOK}" ]; then
+            curl -sS --max-time 15 -X POST "$HOOK" \
               -H "Content-Type: application/json" \
-              -d "$(jq -n --arg b "$MSG" '{to: "pb@btscc.co.uk", subject: "📰 MortgageLab newsletter: ready to prepare", body: $b}')" \
+              -d "$(jq -n --arg b "$BODY" '{to: "pb@btscc.co.uk", subject: "📰 MortgageLab newsletter: ready to prepare", body: $b}')" \
               > /dev/null && SENT=1
           fi
           if [ "$SENT" = "1" ]; then
